@@ -54,7 +54,8 @@ class LlmsTxtCommand extends Command
         $this->line('  • /llms-full.txt - Complete content');
 
         if (config('llms-txt.individual_posts.enabled', false)) {
-            $this->line('  • /post-slug.txt - Individual post markdown');
+            $postTypesPattern = implode('|', config('llms-txt.individual_posts.post_types', ['post', 'page']));
+            $this->line("  • /({$postTypesPattern})-{slug}.txt - Individual post markdown");
         }
 
         if (! config('llms-txt.individual_posts.enabled', false)) {

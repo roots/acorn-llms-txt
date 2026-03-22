@@ -69,7 +69,15 @@ class LlmsTxtController
     {
         $cacheTtl = config('llms-txt.cache_ttl', 3600);
         $content = Cache::remember('llms_txt_sitemap', $cacheTtl, function () {
+            if (config('llms-txt.individual_posts.enabled') && !empty(config('llms-txt.individual_posts.post_types'))) {
+                add_filter('acorn/llms_txt/post_types', [$this, 'getIndividualPostTypes']);
+            }
+
             $posts = $this->fetcher->getPosts();
+
+            if (has_filter('acorn/llms_txt/post_types', [$this, 'getIndividualPostTypes'])) {
+                remove_filter('acorn/llms_txt/post_types', [$this, 'getIndividualPostTypes']);
+            }
 
             return $this->formatter->formatSitemap($posts);
         });
@@ -79,17 +87,22 @@ class LlmsTxtController
             ->header('X-Robots-Tag', 'noindex');
     }
 
-    public function individual(string $slug): Response
+    public function getIndividualPostTypes(): array
+    {
+        return config('llms-txt.individual_posts.post_types');
+    }
+
+    public function individual(string $postType, string $slug): Response
     {
         // Get configuration for individual posts
-        $postTypes = config('llms-txt.individual_posts.post_types', ['post', 'page']);
         $cacheTtl = config('llms-txt.individual_posts.cache_ttl', 3600);
 
-        $cacheKey = "llms_txt_individual_{$slug}";
+        $cacheKey = "llms_txt_individual_{$postType}_{$slug}";
 
-        $content = Cache::remember($cacheKey, $cacheTtl, function () use ($slug, $postTypes) {
-            // Find the post by slug
-            $post = $this->findPostBySlug($slug, $postTypes);
+        $content = Cache::remember($cacheKey, $cacheTtl, function () use ($postType, $slug) {
+
+            // Find the post by slug and posttype
+            $post = $this->findPostByPostTypeAndSlug($postType, $slug);
 
             if (! $post) {
                 return null;
@@ -113,25 +126,18 @@ class LlmsTxtController
             ->header('X-Robots-Tag', 'noindex');
     }
 
-    protected function findPostBySlug(string $slug, array $postTypes): ?\WP_Post
+    protected function findPostByPostTypeAndSlug(string $postType, string $slug): ?\WP_Post
     {
         // Validate post types before querying
-        $validPostTypes = [];
-        foreach ($postTypes as $postType) {
-            if (post_type_exists($postType)) {
-                $validPostTypes[] = $postType;
-            }
-        }
-
-        if (empty($validPostTypes)) {
-            error_log('No valid post types for individual post lookup: '.implode(', ', $postTypes));
+        if (! post_type_exists($postType)) {
+            error_log('No valid post types for individual post lookup: '.$postType);
 
             return null;
         }
 
         $args = [
             'name' => sanitize_title($slug),
-            'post_type' => $validPostTypes,
+            'post_type' => $postType,
             'post_status' => 'publish',
             'posts_per_page' => 1,
         ];

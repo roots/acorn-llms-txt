@@ -98,7 +98,7 @@ Welcome to WordPress. This is your first post...
 XML sitemap listing all llms.txt endpoints, automatically integrated with SEO plugins.
 
 ### Individual Post Endpoints (Optional)
-Access individual posts via `/post-slug.txt` (disabled by default for performance).
+Access individual posts via `/postType-slug.txt` (disabled by default for performance).
 
 ## Configuration
 

@@ -239,18 +239,22 @@ class ContentFormatter
         // Add individual posts if enabled
         if (config('llms-txt.individual_posts.enabled', false)) {
             $posts->each(function ($post) use (&$output, $baseUrl) {
+                $postType = get_post_type($post['id']);
+                if (!in_array($postType, config('llms-txt.individual_posts.post_types'))) {
+                    return;
+                }
                 $slug = get_post_field('post_name', $post['id']);
                 if (! empty($slug)) {
                     $lastmod = date('Y-m-d\TH:i:s+00:00', strtotime($post['date'] ?? 'now'));
 
                     $output[] = '    <url>';
-                    $output[] = "        <loc>{$baseUrl}/{$slug}.txt</loc>";
+                    $output[] = "        <loc>{$baseUrl}/{$postType}-{$slug}.txt</loc>";
                     $output[] = "        <lastmod>{$lastmod}</lastmod>";
                     $output[] = '        <changefreq>weekly</changefreq>';
                     $output[] = '        <priority>0.4</priority>';
                     $output[] = '    </url>';
                 }
-            });
+            })->filter();
         }
 
         $output[] = '</urlset>';

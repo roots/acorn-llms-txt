@@ -79,8 +79,10 @@ class LlmsTxtServiceProvider extends ServiceProvider
     protected function registerIndividualPostRoutes(): void
     {
         if (config('llms-txt.individual_posts.enabled', false)) {
-            Route::get('{slug}.txt', [LlmsTxtController::class, 'individual'])
-                ->where('slug', '.*');
+            $postTypesPattern = implode('|', config('llms-txt.individual_posts.post_types', ['post', 'page']));
+            Route::get('{postType}-{slug}.txt', [LlmsTxtController::class, 'individual'])
+                ->where('postType', $postTypesPattern)
+                ->where('slug', '.+');
         }
     }
 }

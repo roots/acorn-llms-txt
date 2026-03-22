@@ -130,8 +130,8 @@ class CacheInvalidator
             'post_type' => $postTypes,
             'post_status' => 'any',
             'posts_per_page' => -1,
-            'fields' => 'names',
         ]);
+        $posts = collect($posts)->pluck('post_name')->toArray();
 
         foreach ($posts as $slug) {
             $cacheKey = "llms_txt_individual_{$slug}";
