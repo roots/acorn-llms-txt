@@ -1,17 +1,5 @@
 <?php
 
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
-use Roots\AcornLlmsTxt\ContentFetcher;
-use Roots\AcornLlmsTxt\ContentFormatter;
-use Roots\AcornLlmsTxt\Data\Link;
-use Roots\AcornLlmsTxt\Data\LlmsTxtDocument;
-use Roots\AcornLlmsTxt\Data\Section;
-use Roots\AcornLlmsTxt\Http\Controllers\LlmsTxtController;
-use Roots\AcornLlmsTxt\Services\CacheInvalidator;
-use Roots\AcornLlmsTxt\Services\MarkdownConverter;
-use Roots\AcornLlmsTxt\Services\SeoFilter;
-
 /**
  * Simple test runner for WP-CLI
  * Run with: wp eval-file tests/wp-cli-test.php
@@ -53,8 +41,8 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing ContentFetcher...');
 
         try {
-            $fetcher = new ContentFetcher(['post', 'page']);
-            $this->assert($fetcher instanceof ContentFetcher, 'ContentFetcher can be instantiated');
+            $fetcher = new \Roots\AcornLlmsTxt\ContentFetcher(['post', 'page']);
+            $this->assert($fetcher instanceof \Roots\AcornLlmsTxt\ContentFetcher, 'ContentFetcher can be instantiated');
         } catch (Exception $e) {
             $this->fail('ContentFetcher instantiation', $e->getMessage());
         }
@@ -63,9 +51,9 @@ class LlmsTxtTestRunner
         try {
             $posts = get_posts(['numberposts' => 1, 'post_type' => 'post']);
             if (! empty($posts)) {
-                $fetcher = new ContentFetcher(['post']);
+                $fetcher = new \Roots\AcornLlmsTxt\ContentFetcher(['post']);
                 $collection = $fetcher->getPosts(1);
-                $this->assert($collection instanceof Collection, 'getPosts returns Collection');
+                $this->assert($collection instanceof \Illuminate\Support\Collection, 'getPosts returns Collection');
                 $this->assert($collection->count() <= 1, 'getPosts respects limit');
             } else {
                 WP_CLI::line('  Skipped: No posts found for testing');
@@ -80,8 +68,8 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing SeoFilter...');
 
         try {
-            $filter = new SeoFilter;
-            $this->assert($filter instanceof SeoFilter, 'SeoFilter can be instantiated');
+            $filter = new \Roots\AcornLlmsTxt\Services\SeoFilter;
+            $this->assert($filter instanceof \Roots\AcornLlmsTxt\Services\SeoFilter, 'SeoFilter can be instantiated');
         } catch (Exception $e) {
             $this->fail('SeoFilter instantiation', $e->getMessage());
         }
@@ -90,7 +78,7 @@ class LlmsTxtTestRunner
         try {
             $posts = get_posts(['numberposts' => 1, 'post_type' => 'post']);
             if (! empty($posts)) {
-                $filter = new SeoFilter;
+                $filter = new \Roots\AcornLlmsTxt\Services\SeoFilter;
                 $result = $filter->shouldExcludePost($posts[0]->ID);
                 $this->assert(is_bool($result), 'shouldExcludePost returns boolean');
             } else {
@@ -106,8 +94,8 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing Data Objects...');
 
         try {
-            $document = new LlmsTxtDocument;
-            $this->assert($document instanceof LlmsTxtDocument, 'LlmsTxtDocument can be instantiated');
+            $document = new \Roots\AcornLlmsTxt\Data\LlmsTxtDocument;
+            $this->assert($document instanceof \Roots\AcornLlmsTxt\Data\LlmsTxtDocument, 'LlmsTxtDocument can be instantiated');
 
             $document->title('Test Title')->description('Test Description');
             $this->assert($document->toString() !== '', 'LlmsTxtDocument generates output');
@@ -116,11 +104,11 @@ class LlmsTxtTestRunner
         }
 
         try {
-            $section = new Section;
-            $link = new Link;
+            $section = new \Roots\AcornLlmsTxt\Data\Section;
+            $link = new \Roots\AcornLlmsTxt\Data\Link;
 
-            $this->assert($section instanceof Section, 'Section can be instantiated');
-            $this->assert($link instanceof Link, 'Link can be instantiated');
+            $this->assert($section instanceof \Roots\AcornLlmsTxt\Data\Section, 'Section can be instantiated');
+            $this->assert($link instanceof \Roots\AcornLlmsTxt\Data\Link, 'Link can be instantiated');
         } catch (Exception $e) {
             $this->fail('Section/Link objects', $e->getMessage());
         }
@@ -132,15 +120,15 @@ class LlmsTxtTestRunner
 
         // Test controller directly instead of HTTP request
         try {
-            $controller = new LlmsTxtController(
-                new ContentFetcher(['post', 'page']),
-                new ContentFormatter(
-                    new MarkdownConverter
+            $controller = new \Roots\AcornLlmsTxt\Http\Controllers\LlmsTxtController(
+                new \Roots\AcornLlmsTxt\ContentFetcher(['post', 'page']),
+                new \Roots\AcornLlmsTxt\ContentFormatter(
+                    new \Roots\AcornLlmsTxt\Services\MarkdownConverter
                 )
             );
 
             $response = $controller->index();
-            $this->assert($response instanceof Response, 'Controller returns Response object');
+            $this->assert($response instanceof \Illuminate\Http\Response, 'Controller returns Response object');
             $this->assert($response->getStatusCode() === 200, 'Controller returns 200 status');
 
             $content = $response->getContent();
@@ -155,13 +143,13 @@ class LlmsTxtTestRunner
         // Test other endpoints
         try {
             $response = $controller->full();
-            $this->assert($response instanceof Response, 'Full endpoint returns Response');
+            $this->assert($response instanceof \Illuminate\Http\Response, 'Full endpoint returns Response');
 
             $response = $controller->small();
-            $this->assert($response instanceof Response, 'Small endpoint returns Response');
+            $this->assert($response instanceof \Illuminate\Http\Response, 'Small endpoint returns Response');
 
             $response = $controller->sitemap();
-            $this->assert($response instanceof Response, 'Sitemap endpoint returns Response');
+            $this->assert($response instanceof \Illuminate\Http\Response, 'Sitemap endpoint returns Response');
             $this->assert($response->headers->get('Content-Type') === 'application/xml; charset=utf-8', 'Sitemap has correct content type');
 
         } catch (Exception $e) {
@@ -174,10 +162,10 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing ContentFormatter...');
 
         try {
-            $formatter = new ContentFormatter(
-                new MarkdownConverter
+            $formatter = new \Roots\AcornLlmsTxt\ContentFormatter(
+                new \Roots\AcornLlmsTxt\Services\MarkdownConverter
             );
-            $this->assert($formatter instanceof ContentFormatter, 'ContentFormatter can be instantiated');
+            $this->assert($formatter instanceof \Roots\AcornLlmsTxt\ContentFormatter, 'ContentFormatter can be instantiated');
 
             // Test with sample data
             $posts = collect([
@@ -193,7 +181,7 @@ class LlmsTxtTestRunner
             ]);
 
             $document = $formatter->formatListing($posts);
-            $this->assert($document instanceof LlmsTxtDocument, 'formatListing returns LlmsTxtDocument');
+            $this->assert($document instanceof \Roots\AcornLlmsTxt\Data\LlmsTxtDocument, 'formatListing returns LlmsTxtDocument');
 
             $output = $document->toString();
             $this->assert(strpos($output, get_bloginfo('name')) !== false, 'formatListing includes site name');
@@ -217,8 +205,8 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing MarkdownConverter...');
 
         try {
-            $converter = new MarkdownConverter;
-            $this->assert($converter instanceof MarkdownConverter, 'MarkdownConverter can be instantiated');
+            $converter = new \Roots\AcornLlmsTxt\Services\MarkdownConverter;
+            $this->assert($converter instanceof \Roots\AcornLlmsTxt\Services\MarkdownConverter, 'MarkdownConverter can be instantiated');
 
             $html = '<h2>Test Heading</h2><p>Test paragraph with <strong>bold</strong> text.</p>';
             $markdown = $converter->convert($html);
@@ -237,8 +225,8 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing CacheInvalidator...');
 
         try {
-            $invalidator = new CacheInvalidator;
-            $this->assert($invalidator instanceof CacheInvalidator, 'CacheInvalidator can be instantiated');
+            $invalidator = new \Roots\AcornLlmsTxt\Services\CacheInvalidator;
+            $this->assert($invalidator instanceof \Roots\AcornLlmsTxt\Services\CacheInvalidator, 'CacheInvalidator can be instantiated');
 
             // Test cache invalidation doesn't throw errors
             $invalidator->invalidateCache();
@@ -261,15 +249,15 @@ class LlmsTxtTestRunner
             $hooksBefore = $GLOBALS['wp_filter'] ?? [];
 
             // Re-register hooks by creating new CacheInvalidator
-            new CacheInvalidator;
+            new \Roots\AcornLlmsTxt\Services\CacheInvalidator;
 
             $hooksAfter = $GLOBALS['wp_filter'] ?? [];
             $this->assert(count($hooksAfter) >= count($hooksBefore), 'WordPress hooks are registered');
 
             // Test post type validation
-            $fetcher = new ContentFetcher(['post', 'invalid_type', 'page']);
+            $fetcher = new \Roots\AcornLlmsTxt\ContentFetcher(['post', 'invalid_type', 'page']);
             $posts = $fetcher->getPosts(1);
-            $this->assert($posts instanceof Collection, 'Invalid post types handled gracefully');
+            $this->assert($posts instanceof \Illuminate\Support\Collection, 'Invalid post types handled gracefully');
 
         } catch (Exception $e) {
             $this->fail('WordPress Integration', $e->getMessage());
@@ -285,9 +273,9 @@ class LlmsTxtTestRunner
             $originalConfig = config('llms-txt');
 
             // Test with minimal config
-            $fetcher = new ContentFetcher(['post']);
+            $fetcher = new \Roots\AcornLlmsTxt\ContentFetcher(['post']);
             $posts = $fetcher->getPosts(1);
-            $this->assert($posts instanceof Collection, 'Works with minimal config');
+            $this->assert($posts instanceof \Illuminate\Support\Collection, 'Works with minimal config');
 
             // Test excerpt length configuration
             if (! empty($posts)) {
@@ -317,11 +305,11 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing WooCommerce Integration...');
 
         try {
-            $fetcher = new ContentFetcher(['product']);
+            $fetcher = new \Roots\AcornLlmsTxt\ContentFetcher(['product']);
 
             // Test WooCommerce detection doesn't break when WooCommerce isn't active
             $posts = $fetcher->getPosts(1);
-            $this->assert($posts instanceof Collection, 'WooCommerce integration graceful when plugin inactive');
+            $this->assert($posts instanceof \Illuminate\Support\Collection, 'WooCommerce integration graceful when plugin inactive');
 
             // Test WooCommerce data extraction with mock product
             if (class_exists('WooCommerce') && function_exists('wc_get_product')) {
@@ -353,7 +341,7 @@ class LlmsTxtTestRunner
         WP_CLI::line('Testing SEO Plugin Integration...');
 
         try {
-            $filter = new SeoFilter;
+            $filter = new \Roots\AcornLlmsTxt\Services\SeoFilter;
 
             // Test with posts that have various meta configurations
             $posts = get_posts(['numberposts' => 3, 'post_type' => 'post']);
